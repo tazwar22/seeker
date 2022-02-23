@@ -18,6 +18,7 @@ const Map = () => {
     const [mapOb, setMap] = useState({});
     const [zoomLevel, setZoomLevel] = useState(18)
     const [currpos, setCurrpos] = useState({latitude:49.26609680307735, longitude:-123.24254063087011})
+    const [category, setCategory] = useState('library');
   
     // Function to parse given location
     const parseLatLong = (latLongStr)=>{
@@ -135,15 +136,18 @@ const Map = () => {
                 marker.addTo(tomMap);
 
                 marker._element.addEventListener('click', ()=>{
-                    console.log("Position...")
+                    // console.log("Position...")
                     // console.log([poiLoc.lng, poiLoc.lat]);
                     // console.log(`${currpos.longitude},${currpos.latitude}:${poiLoc.lng},${poiLoc.lat}`)
                     api.services.calculateRoute({
                         key: process.env.REACT_APP_TT_API_KEY,
-                        locations: `${currpos.longitude},${currpos.latitude}:${poiLoc.lng},${poiLoc.lat}`
+                        locations: `${currpos.longitude},${currpos.latitude}:${poiLoc.lng},${poiLoc.lat}`,
+                        travelMode: 'bus'
                       })
                       .then(function(routeData) {
-                          console.log(routeData.routes[0].summary);
+                          const SECONDS = routeData.routes[0].summary.travelTimeInSeconds;
+                          const travelTime = new Date(SECONDS * 1000).toISOString().substr(11, 8);
+                          console.log("Travel time to " + poiName + ":" + travelTime);
                           drawRoute(routeData.toGeoJson(), tomMap)
                     });
                 })
@@ -164,11 +168,26 @@ const Map = () => {
             }
         }
 
+        async function getNearbyPointsByCat(){
+            let res = await api.services.categorySearch({
+                key: process.env.REACT_APP_TT_API_KEY,
+                query:category,
+                center: [currpos.longitude,  currpos.latitude],
+                radius: 3000,
+                limit:10,
+                typeahead:false
+            })
+            // console.log(res)
+            if (res.results.length > 0) {
+                addMulMarkers(res); //Add all markers to map
+            }
+        }
+
       // console.log(mapOb)
-      getNearbyPoints();
+      getNearbyPointsByCat();
 
       return () => tomMap.remove();
-    }, [currpos]);
+    }, [currpos, category]);
   
     if (mapOb){
       return (
@@ -176,9 +195,10 @@ const Map = () => {
         <div className="App">
         <div className='locSearch'>
             <h2>Search</h2>
-            <input type="text" id="latlong" placeholder='49.266, -123.241' 
+            {/* <input type="text" id="latlong" placeholder='49.266, -123.241' 
             onChange={(e)=>{parseLatLong(e.target.value)}}>
-            </input>
+            </input> */}
+            {/* <input type="text" id="search-cat" placeholder='Burgers'></input> */}
         </div>
         <div ref={mapElement} className='tomMap'> </div>
         </div>  
