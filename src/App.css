@@ -54,3 +54,11 @@ Custom Styles
   border-radius: 11px;
   border: 3px solid #282c34;
 }
+
+.marker-poi {
+  background-size: cover;
+  width: 15px;
+  height: 15px;
+  border-radius: 7px;
+  border: 3px solid #282c34;
+}
