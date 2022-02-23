@@ -3,18 +3,20 @@ import {useState, useEffect, useRef} from 'react'
 import '@tomtom-international/web-sdk-maps/dist/maps.css'
 import * as tt from '@tomtom-international/web-sdk-maps' //Get everything
 import * as api from '@tomtom-international/web-sdk-services'
-import { faHome, faCoffee} from "@fortawesome/free-solid-svg-icons";
+import { faHome, faCoffee, faLocationDot} from "@fortawesome/free-solid-svg-icons";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import 'font-awesome/css/font-awesome.min.css';
 import { library, icon } from '@fortawesome/fontawesome-svg-core';
 
 library.add(faHome);
 library.add(faCoffee);
+library.add(faLocationDot);
 
 
 const Map = () => {
     const mapElement = useRef();
     const [mapOb, setMap] = useState({});
+    const [zoomLevel, setZoomLevel] = useState(18)
     const [currpos, setCurrpos] = useState({latitude:49.26609680307735, longitude:-123.24254063087011})
   
     // Function to parse given location
@@ -23,6 +25,26 @@ const Map = () => {
       const latLong = latLongStr.split(", ");
       setCurrpos({latitude:latLong[0], longitude:latLong[1]});
     }
+
+    // Source - https://github.com/kubowania/distance-matrix-routing-with-tom-tom-api/blob/main/src/App.js
+    const drawRoute = (geoJson, map) => {
+        if (map.getLayer('route')) {
+          map.removeLayer('route')
+          map.removeSource('route')
+        }
+        map.addLayer({
+          id: 'route',
+          type: 'line',
+          source: {
+            type: 'geojson',
+            data: geoJson
+          },
+          paint: {
+            'line-color': '#4a90e2',
+            'line-width': 6
+          }
+        })
+      }
   
     useEffect(()=>{
       //Grab the API key form the .env file
@@ -33,10 +55,12 @@ const Map = () => {
       let tomMap = tt.map({
         key: KEY,
         container: mapElement.current,
-        zoom:18,
+        zoom:zoomLevel,
         center: [currpos.longitude,  currpos.latitude],
         stylesVisibility: {poi:false} //Remove POI markers
       });
+
+    //   tomMap.on('click', (ev)=>console.log(ev));
   
       setMap(tomMap);
       // console.log(mapOb);
@@ -65,6 +89,8 @@ const Map = () => {
           // console.log("Finished moving");
           // console.log(marker.getLngLat());
           const newPos = marker.getLngLat();
+          setZoomLevel(tomMap.getZoom())
+          console.log("Current zoom level" + zoomLevel)
           setCurrpos({longitude:newPos.lng, latitude:newPos.lat});
         })
   
@@ -90,15 +116,13 @@ const Map = () => {
                 const popup = new tt.Popup({offset : popupOffset}).setHTML(poiName);
                 //Make an HTML element <FontAwesomeIcon icon={FaAmazon} />
                 const markerElement = document.createElement('span', {className:''});
-                markerElement.innerHTML = icon({ prefix: 'fa', iconName: 'coffee'}).html;
+                markerElement.innerHTML = icon({ prefix: 'fa', iconName: 'location-dot'}).html;
                 markerElement.className = 'marker-poi';
-                // console.log(markerElement)
-                                                // document.createElement('FontAwesomeIcon', {icon:faHome}));
-                // markerElement.className = 'marker-poi';
-
-                // const markerElement = document.createElement(FontAwesomeIcon,
-                //                          {'icon':faHome, className:"marker"})
-                // console.log(markerElement)
+                // markerElement.addEventListener('click', ()=>{
+                //     console.log("Position...")
+                //     console.log([poiLoc.lng, poiLoc.lat]);
+                // })
+                
                 const marker = new tt.Marker({
                     element:markerElement,
                     draggable:false
@@ -106,9 +130,23 @@ const Map = () => {
         
                 //Specify initial position
                 marker.setLngLat([poiLoc.lng, poiLoc.lat]);
-                // console.log(tomMap);
-                marker.addTo(tomMap);
+                // console.log(marker)
                 marker.setPopup(popup);
+                marker.addTo(tomMap);
+
+                marker._element.addEventListener('click', ()=>{
+                    console.log("Position...")
+                    // console.log([poiLoc.lng, poiLoc.lat]);
+                    // console.log(`${currpos.longitude},${currpos.latitude}:${poiLoc.lng},${poiLoc.lat}`)
+                    api.services.calculateRoute({
+                        key: process.env.REACT_APP_TT_API_KEY,
+                        locations: `${currpos.longitude},${currpos.latitude}:${poiLoc.lng},${poiLoc.lat}`
+                      })
+                      .then(function(routeData) {
+                          console.log(routeData.routes[0].summary);
+                          drawRoute(routeData.toGeoJson(), tomMap)
+                    });
+                })
             }
         }
 
@@ -117,10 +155,13 @@ const Map = () => {
             let res = await api.services.nearbySearch({
                 key: process.env.REACT_APP_TT_API_KEY,
                 center: [currpos.longitude,  currpos.latitude],
-                radius: 1000
+                radius: 3000,
+                limit:100
             })
-            console.log(res)
-            addMulMarkers(res); //Add all markers to map
+            // console.log(res)
+            if (res.results.length > 0) {
+                addMulMarkers(res); //Add all markers to map
+            }
         }
 
       // console.log(mapOb)
