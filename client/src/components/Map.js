@@ -20,11 +20,11 @@ const Map = () => {
     const mapElement = useRef();
     const [mapOb, setMap] = useState({});
     const [zoomLevel, setZoomLevel] = useState(14)
-    const [currpos, setCurrpos] = useState({latitude:49.26609680307735, longitude:-123.24254063087011})
+    const [currpos, setCurrpos] = useState({latitude:49.276065091660456, longitude:-123.1285285423275});
     const [category, setCategory] = useState('food');
   
     // Function to parse given location
-    const parseLatLong = (latLongStr)=>{
+    const parseLatLong = (latLongStr) => {
       console.log(latLongStr);
       const latLong = latLongStr.split(", ");
       setCurrpos({latitude:latLong[0], longitude:latLong[1]});
@@ -177,8 +177,9 @@ const Map = () => {
       const tomMap = createMap();
       setMap(tomMap);
       addMarker(tomMap);
-      const res = await getNearbyPointsByCat();
-      addMulMarkers(res, tomMap); //Add all markers to map
+      
+      // const res = await getNearbyPointsByCat();
+      // addMulMarkers(res, tomMap); //Add all markers to map
   
       return () => tomMap.remove();
     }, [currpos, category]);
