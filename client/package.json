@@ -11,6 +11,7 @@
     "@testing-library/user-event": "^13.5.0",
     "@tomtom-international/web-sdk-maps": "^6.18.0",
     "@tomtom-international/web-sdk-services": "^6.18.0",
+    "axios": "^0.27.2",
     "font-awesome": "^4.7.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
@@ -41,5 +42,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.1"
   }
 }

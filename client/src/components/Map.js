@@ -1,4 +1,5 @@
-import React from 'react'
+import React from 'react';
+import axios from 'axios';
 import {useState, useEffect, useRef} from 'react'
 import '@tomtom-international/web-sdk-maps/dist/maps.css'
 import * as tt from '@tomtom-international/web-sdk-maps' //Get everything
@@ -11,7 +12,6 @@ import { library, icon } from '@fortawesome/fontawesome-svg-core';
 library.add(faHome);
 library.add(faCoffee);
 library.add(faLocationDot);
-
 
 const Map = () => {
 
@@ -98,6 +98,7 @@ const Map = () => {
 
     //Adds markers for a given set of points
     const addMulMarkers = (nearbyPois, tomMap) => {
+      console.log('Adding markers')
       if (nearbyPois.results.length > 0){
         for (let pid in nearbyPois.results){
           // console.log(nearbyPois.results[pid]);
@@ -151,25 +152,19 @@ const Map = () => {
 
     //Function to get and plot nearby points
   async function getNearbyPoints(){
-  let res = await api.services.nearbySearch({
-      key: process.env.REACT_APP_TT_API_KEY,
-      center: [currpos.longitude,  currpos.latitude],
-      radius: 3000,
-      limit:100
-    })
-    return res;
+    console.log('Fetching data')
+    const res = await axios.get('api/nearby_points', {params:{lat:currpos.latitude, lon:currpos.longitude}});
+    console.log(res.data);
+    return res.data;
   }
 
   async function getNearbyPointsByCat(){
-      let res = await api.services.categorySearch({
-          key: process.env.REACT_APP_TT_API_KEY,
-          query:category,
-          center: [currpos.longitude,  currpos.latitude],
-          radius: 3000,
-          limit:10,
-          typeahead:false
-      });
-      return res;
+    const res = await axios.get('api/nearby_points_by_cat',
+                              {params:{lat:currpos.latitude,
+                                lon:currpos.longitude, 
+                                categ:category}});
+    console.log(res.data);
+    return res.data;
   }
 
     useEffect(async ()=>{
@@ -178,8 +173,9 @@ const Map = () => {
       setMap(tomMap);
       addMarker(tomMap);
       
-      // const res = await getNearbyPointsByCat();
-      // addMulMarkers(res, tomMap); //Add all markers to map
+      const res = await getNearbyPointsByCat();
+      // const res = await getNearbyPoints();
+      addMulMarkers(res, tomMap); //Add all markers to map
   
       return () => tomMap.remove();
     }, [currpos, category]);
