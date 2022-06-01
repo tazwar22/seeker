@@ -59,6 +59,33 @@ app.get('/api/nearby_points_by_cat', (req, res)=>{
     });
 });
 
+/*
+Given an origin and a destination; calculates the route(s) using TomTom API
+*/
+app.get('/find_route', (req, res)=>{
+    console.log('Calculating route to destination... \n');
+    console.log(req.query)
+    const origin = JSON.parse(req.query.origin);
+    const dest = JSON.parse(req.query.dest);
+    const travelMode = req.query.travelMode;
+    tt.services
+    .calculateRoute({
+        key: process.env.TT_API_KEY,
+        locations: `${origin.lon},${origin.lat}:${dest.lon},${dest.lat}`,
+        travelMode: travelMode
+    }).then((routeData)=>{
+        console.log(routeData);
+        console.log(routeData.toGeoJson());
+        const processedRoute = {
+            routes:routeData.routes,
+            geoJsonData:routeData.toGeoJson()
+        };
+        res.status(200).send(processedRoute);
+    }).catch((error)=>{
+        console.error(error);
+    })
+})
+
 
 app.listen(PORT, ()=>{
     console.log(`SpotyExpo running on port ${PORT}`);

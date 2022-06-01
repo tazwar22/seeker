@@ -21,7 +21,7 @@ const Map = () => {
     const [mapOb, setMap] = useState({});
     const [zoomLevel, setZoomLevel] = useState(14)
     const [currpos, setCurrpos] = useState({latitude:49.276065091660456, longitude:-123.1285285423275});
-    const [category, setCategory] = useState('food');
+    const [category, setCategory] = useState('clubs');
   
     // Function to parse given location
     const parseLatLong = (latLongStr) => {
@@ -134,16 +134,19 @@ const Map = () => {
               // console.log("Position...")
               // console.log([poiLoc.lng, poiLoc.lat]);
               // console.log(`${currpos.longitude},${currpos.latitude}:${poiLoc.lng},${poiLoc.lat}`)
-              api.services.calculateRoute({
-                  key: process.env.REACT_APP_TT_API_KEY,
-                  locations: `${currpos.longitude},${currpos.latitude}:${poiLoc.lng},${poiLoc.lat}`,
-                  travelMode: 'bus'
+              const origin = {lat:currpos.latitude, lon:currpos.longitude};
+              const dest = {lat:poiLoc.lat, lon:poiLoc.lng};
+              axios
+                .get('find_route', {params : {origin:origin, dest:dest, travelMode:'car'}})
+                .then((response)=>{
+                  return response.data;
                 })
                 .then(function(routeData) {
-                    const SECONDS = routeData.routes[0].summary.travelTimeInSeconds;
-                    const travelTime = new Date(SECONDS * 1000).toISOString().substr(11, 8);
-                    console.log("Travel time to " + poiName + ":" + travelTime);
-                    drawRoute(routeData.toGeoJson(), tomMap)
+                    console.log(routeData)
+                    // const SECONDS = routeData.routes[0].summary.travelTimeInSeconds;
+                    // const travelTime = new Date(SECONDS * 1000).toISOString().substr(11, 8);
+                    // console.log("Travel time to " + poiName + ":" + travelTime);
+                    drawRoute(routeData.geoJsonData, tomMap);
               });
           })
         };
@@ -160,9 +163,7 @@ const Map = () => {
 
   async function getNearbyPointsByCat(){
     const res = await axios.get('api/nearby_points_by_cat',
-                              {params:{lat:currpos.latitude,
-                                lon:currpos.longitude, 
-                                categ:category}});
+                              {params:{lat:currpos.latitude,lon:currpos.longitude, categ:category}});
     console.log(res.data);
     return res.data;
   }
