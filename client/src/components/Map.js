@@ -3,11 +3,14 @@ import axios from 'axios';
 import {useState, useEffect, useRef} from 'react'
 import '@tomtom-international/web-sdk-maps/dist/maps.css'
 import * as tt from '@tomtom-international/web-sdk-maps' //Get everything
-import * as api from '@tomtom-international/web-sdk-services'
+import { services } from '@tomtom-international/web-sdk-services';
+import SearchBox from '@tomtom-international/web-sdk-plugin-searchbox';
+// import * as api from '@tomtom-international/web-sdk-services'
 import { faHome, faCoffee, faLocationDot} from "@fortawesome/free-solid-svg-icons";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import 'font-awesome/css/font-awesome.min.css';
 import { library, icon } from '@fortawesome/fontawesome-svg-core';
+import SearchBoxWrapper from './SearchBoxWrapper';
 
 library.add(faHome);
 library.add(faCoffee);
@@ -22,6 +25,7 @@ const Map = () => {
     const [zoomLevel, setZoomLevel] = useState(14)
     const [currpos, setCurrpos] = useState({latitude:49.276065091660456, longitude:-123.1285285423275});
     const [category, setCategory] = useState('clubs');
+    const [destination, setDestination] = useState('');
   
     // Function to parse given location
     const parseLatLong = (latLongStr) => {
@@ -137,7 +141,7 @@ const Map = () => {
               const origin = {lat:currpos.latitude, lon:currpos.longitude};
               const dest = {lat:poiLoc.lat, lon:poiLoc.lng};
               axios
-                .get('find_route', {params : {origin:origin, dest:dest, travelMode:'car'}})
+                .get('api/find_route', {params : {origin:origin, dest:dest, travelMode:'car'}})
                 .then((response)=>{
                   return response.data;
                 })
@@ -168,15 +172,21 @@ const Map = () => {
     return res.data;
   }
 
+  const searchDestination = async () =>{
+    console.log('~~~ Making API call... ~~~');
+    console.log(destination);
+    const searchResults = await axios.get('/api/fuzzy_search', {params : {queryText:destination, center: currpos}});
+    console.log(searchResults.data);
+  };
+
     useEffect(async ()=>{
       //Construct a map
       const tomMap = createMap();
       setMap(tomMap);
       addMarker(tomMap);
       
-      const res = await getNearbyPointsByCat();
-      // const res = await getNearbyPoints();
-      addMulMarkers(res, tomMap); //Add all markers to map
+      // const res = await getNearbyPointsByCat();
+      // addMulMarkers(res, tomMap); //Add all markers to map
   
       return () => tomMap.remove();
     }, [currpos, category]);
@@ -185,14 +195,16 @@ const Map = () => {
       return (
         //Only return the map if it's loaded
         <div className="App">
-        <div className='locSearch'>
-            <h2>Search</h2>
-            {/* <input type="text" id="latlong" placeholder='49.266, -123.241' 
-            onChange={(e)=>{parseLatLong(e.target.value)}}>
-            </input> */}
-            <input type="text" id="search-cat" placeholder='Burgers'></input>
-        </div>
-        <div ref={mapElement} className='tomMap'> </div>
+          {/* <div className='locSearch'> */}
+              {/* <h2>Search</h2> */}
+              {/* <input type="text" id="latlong" placeholder='49.266, -123.241' 
+              onChange={(e)=>{parseLatLong(e.target.value)}}>
+              </input> */}
+              {/* <input type="text" id="search-cat" placeholder='Burgers'></input> */}
+          {/* </div> */}
+
+          <SearchBoxWrapper destinationSetter={setDestination} searchFunction={searchDestination}/>
+          <div ref={mapElement} className='tomMap'> </div>
         </div>  
       );
     }else{

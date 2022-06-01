@@ -62,7 +62,7 @@ app.get('/api/nearby_points_by_cat', (req, res)=>{
 /*
 Given an origin and a destination; calculates the route(s) using TomTom API
 */
-app.get('/find_route', (req, res)=>{
+app.get('/api/find_route', (req, res)=>{
     console.log('Calculating route to destination... \n');
     console.log(req.query)
     const origin = JSON.parse(req.query.origin);
@@ -83,6 +83,24 @@ app.get('/find_route', (req, res)=>{
         res.status(200).send(processedRoute);
     }).catch((error)=>{
         console.error(error);
+    })
+});
+
+/*
+Fuzzy Search functionality
+*/
+app.get('/api/fuzzy_search', (req, res)=>{
+    const queryText = req.query.queryText;
+    const center = JSON.parse(req.query.center);
+    tt.services
+    .fuzzySearch({
+        key :  process.env.TT_API_KEY,
+        query: queryText,
+        center: [center.longitude, center.latitude]
+    }).then((data)=>{
+        res.status(200).send(data);
+    }).catch((err)=>{
+        console.error(err);
     })
 })
 

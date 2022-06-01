@@ -4,11 +4,14 @@ import axios from 'axios';
 
 const backendPort = 5001;
 const backendUrl = `http://localhost:${backendPort}`;
-console.log(backendUrl);
 axios.defaults.baseURL = backendUrl;
 
 function App() {
-  return <Map></Map>
+
+  return (<div>
+    <h1>Seeker</h1>
+    <Map />
+    </div>)
 }
 
 export default App;
