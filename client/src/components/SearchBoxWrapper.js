@@ -1,15 +1,18 @@
 import React from 'react';
 
-const SearchBoxWrapper = ({destinationSetter, searchFunction}) => {
+const SearchBoxWrapper = ({searchType, setter, actionFunction}) => {
+
+  const placeholderText = `Enter ${searchType}...`
 
   const handleClick = () => {
-    console.log('*** Searching... ***');
-    searchFunction();
+    console.log('*** Handling action ***');
+    actionFunction();
   }
 
   return (
     <div>
-      <input placeholder='Enter Destination...' onChange={(e)=>{destinationSetter(e.target.value)}}></input>
+      <h4>{searchType}</h4>
+      <input placeholder={placeholderText} onChange={(e)=>{setter(e.target.value)}}></input>
       <button onClick={()=>{handleClick()}}>Search</button>
     </div>
   )

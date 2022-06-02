@@ -24,8 +24,9 @@ const Map = () => {
     const [mapOb, setMap] = useState({});
     const [zoomLevel, setZoomLevel] = useState(14)
     const [currpos, setCurrpos] = useState({latitude:49.276065091660456, longitude:-123.1285285423275});
-    const [category, setCategory] = useState('clubs');
+    const [category, setCategory] = useState('');
     const [destination, setDestination] = useState('');
+    const [currentPois, setCurrentPois] = useState([]);
   
     // Function to parse given location
     const parseLatLong = (latLongStr) => {
@@ -89,12 +90,12 @@ const Map = () => {
       marker.addTo(tomMap);
 
        //Add dragging interaction
-      marker.on('dragend', ()=>{
-        console.log("Finished moving");
-        console.log(marker.getLngLat());
+      marker.on('dragend', () => {
+        console.log("*** User moved ***");
+        // console.log(marker.getLngLat());
         const newPos = marker.getLngLat();
         setZoomLevel(tomMap.getZoom())
-        console.log("Current zoom level" + zoomLevel)
+        // console.log("Current zoom level" + zoomLevel)
         setCurrpos({longitude:newPos.lng, latitude:newPos.lat});
       });
       marker.setPopup(popup).togglePopup();
@@ -102,8 +103,12 @@ const Map = () => {
 
     //Adds markers for a given set of points
     const addMulMarkers = (nearbyPois, tomMap) => {
-      console.log('Adding markers')
+      if (nearbyPois.length == 0) {
+        return;
+      }
       if (nearbyPois.results.length > 0){
+        // console.log(nearbyPois);
+        console.log('Adding markers');
         for (let pid in nearbyPois.results){
           // console.log(nearbyPois.results[pid]);
           const point = nearbyPois.results[pid];
@@ -165,45 +170,50 @@ const Map = () => {
     return res.data;
   }
 
+  /*
+  This function retrieves the nearby Points of Interest
+  */
   async function getNearbyPointsByCat(){
-    const res = await axios.get('api/nearby_points_by_cat',
-                              {params:{lat:currpos.latitude,lon:currpos.longitude, categ:category}});
-    console.log(res.data);
-    return res.data;
+    if (category !== '') {
+      console.log(`*** CATEGORY *** ${category}`)
+      const res = await axios.get('api/nearby_points_by_cat',
+      {params:{lat:currpos.latitude,lon:currpos.longitude, categ:category}});
+      console.log(res.data);
+      setCurrentPois(res.data);
+      // return res.data;
+    }
   }
 
+  /*
+  This function performs a fuzzy search for all types of entities (POIs, Addresses)
+  */
   const searchDestination = async () =>{
-    console.log('~~~ Making API call... ~~~');
-    console.log(destination);
-    const searchResults = await axios.get('/api/fuzzy_search', {params : {queryText:destination, center: currpos}});
-    console.log(searchResults.data);
+    // Only make the call if user has written something
+    if (destination !== ''){
+      console.log(`~~~ Searching for... ~~~ ${destination}`);
+      console.log(destination);
+      const searchResults = await axios.get('/api/fuzzy_search', {params : {queryText:destination, center: currpos}});
+      console.log(searchResults.data);
+      setCurrentPois(searchResults.data);
+    };
   };
 
     useEffect(async ()=>{
       //Construct a map
       const tomMap = createMap();
       setMap(tomMap);
-      addMarker(tomMap);
-      
-      // const res = await getNearbyPointsByCat();
-      // addMulMarkers(res, tomMap); //Add all markers to map
-  
+      addMarker(tomMap); //user
+
+      // searchDestination(); // DON'T DO THIS!
+      addMulMarkers(currentPois, tomMap); //Add all markers to map
       return () => tomMap.remove();
-    }, [currpos, category]);
+    }, [currpos, currentPois]);
   
     if (mapOb){
       return (
-        //Only return the map if it's loaded
         <div className="App">
-          {/* <div className='locSearch'> */}
-              {/* <h2>Search</h2> */}
-              {/* <input type="text" id="latlong" placeholder='49.266, -123.241' 
-              onChange={(e)=>{parseLatLong(e.target.value)}}>
-              </input> */}
-              {/* <input type="text" id="search-cat" placeholder='Burgers'></input> */}
-          {/* </div> */}
-
-          <SearchBoxWrapper destinationSetter={setDestination} searchFunction={searchDestination}/>
+          <SearchBoxWrapper searchType={'Destination'} setter={setDestination} actionFunction={searchDestination}/>
+          <SearchBoxWrapper searchType={'Category'} setter={setCategory} actionFunction={getNearbyPointsByCat}/>
           <div ref={mapElement} className='tomMap'> </div>
         </div>  
       );
