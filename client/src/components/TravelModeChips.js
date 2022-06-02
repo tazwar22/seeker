@@ -13,9 +13,9 @@ const TravelModeChips = ({modeSetter}) => {
     <div>
         <Typography variant='h5'>Select Travel Mode: </Typography>
         <Stack direction="row" spacing={2}>
-            <Chip label="Car" onClick={()=>{handleClick('car')}}/>
-            <Chip label="Bus" onClick={()=>{handleClick('bus')}}/>
-            <Chip label="Walking" onClick={()=>{handleClick('pedestrian')}}/>
+            <Chip color='primary' label="Car" onClick={()=>{handleClick('Car')}}/>
+            <Chip color='primary' label="Bus" onClick={()=>{handleClick('Bus')}}/>
+            <Chip color='primary' label="Walking" onClick={()=>{handleClick('Pedestrian')}}/>
         </Stack>
     </div>
   )

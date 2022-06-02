@@ -26,21 +26,16 @@ const Map = () => {
     const mapElement = useRef();
     const [mapOb, setMap] = useState({});
     const [zoomLevel, setZoomLevel] = useState(14)
-    const [currpos, setCurrpos] = useState({latitude:49.276065091660456, longitude:-123.1285285423275});
+    const [currpos, setCurrpos] = useState({lat:49.276065091660456, lon:-123.1285285423275});
     const [category, setCategory] = useState('');
     const [destination, setDestination] = useState('');
     const [currentPois, setCurrentPois] = useState([]);
 
     const [currentTarget, setCurrentTarget] = useState();
     const [travelMode, setTravelMode] = useState('car');
+    const [activeDestination, setActiveDestination] = useState();
+    const [activeDestinationName, setActiveDestinationName] = useState('');
   
-    // Function to parse given location
-    const parseLatLong = (latLongStr) => {
-      console.log(latLongStr);
-      const latLong = latLongStr.split(", ");
-      setCurrpos({latitude:latLong[0], longitude:latLong[1]});
-    }
-
     // Source - https://github.com/kubowania/distance-matrix-routing-with-tom-tom-api/blob/main/src/App.js
     const drawRoute = (geoJson, map) => {
         if (map.getLayer('route')) {
@@ -69,9 +64,22 @@ const Map = () => {
         key: KEY,
         container: mapElement.current,
         zoom:zoomLevel,
-        center: [currpos.longitude,  currpos.latitude],
-        stylesVisibility: {poi:false} //Remove POI markers
+        center: [currpos.lon,  currpos.lat],
+        stylesVisibility: {poi:false}, //Remove POI markers,
       });
+
+      tomMap.on('click', function (event) {
+        const position = event.lngLat;
+        console.log(position);
+        // tt.services.reverseGeocode({
+        //     key: apiKey,
+        //     position: position
+        // })
+        //     .then(function (results) {
+        //         drawPassengerMarkerOnMap(results);
+        //     });
+      });
+      
       return tomMap;
     };
 
@@ -107,7 +115,7 @@ const Map = () => {
       });
 
       //Specify initial position
-      marker.setLngLat([currpos.longitude, currpos.latitude]);
+      marker.setLngLat([currpos.lon, currpos.lat]);
       // console.log(tomMap);
       marker.addTo(tomMap);
 
@@ -118,7 +126,7 @@ const Map = () => {
         const newPos = marker.getLngLat();
         setZoomLevel(tomMap.getZoom())
         // console.log("Current zoom level" + zoomLevel)
-        setCurrpos({longitude:newPos.lng, latitude:newPos.lat});
+        setCurrpos({lon:newPos.lng, lat:newPos.lat});
       });
       marker.setPopup(popup).togglePopup();
     };
@@ -158,37 +166,53 @@ const Map = () => {
           marker.setPopup(popup);
           marker.addTo(tomMap);
 
-          marker._element.addEventListener('click', ()=>{
-              console.log(point)
+          marker._element.addEventListener('click', async ()=>{
+              console.log(point);
               // console.log("Position...")
               // console.log([poiLoc.lng, poiLoc.lat]);
               // console.log(`${currpos.longitude},${currpos.latitude}:${poiLoc.lng},${poiLoc.lat}`)
-              const origin = {lat:currpos.latitude, lon:currpos.longitude};
+              const origin = {lat:currpos.lat, lon:currpos.lon};
               const dest = {lat:poiLoc.lat, lon:poiLoc.lng};
-              console.log(`Current travel mode: ${travelMode}`)
-              axios
-                .get('api/find_route', {params : {origin:origin, dest:dest, travelMode:travelMode}})
-                .then((response)=>{
-                  return response.data;
-                })
-                .then(function(routeData) {
-                    console.log(routeData);
-
-                    // const SECONDS = routeData.routes[0].summary.travelTimeInSeconds;
-                    // const travelTime = new Date(SECONDS * 1000).toISOString().substr(11, 8);
-                    // console.log("Travel time to " + poiName + ":" + travelTime);
-                    setupTargetCard({name:poiName, bestRouteSummary:routeData.routes[0].summary});
-                    drawRoute(routeData.geoJsonData, tomMap);
-              });
+              setActiveDestination(dest);
+              setActiveDestinationName(poiName);
+              console.log(`Current travel mode: ${travelMode}`);
+              await findAndDrawRoute(poiName, tomMap, origin, dest);
+              // axios
+              //   .get('api/find_route', {params : {origin:origin, dest:dest, travelMode:travelMode}})
+              //   .then((response)=>{
+              //     return response.data;
+              //   })
+              //   .then(function(routeData) {
+              //       console.log(routeData);
+              //       setupTargetCard({name:poiName, bestRouteSummary:routeData.routes[0].summary});
+              //       drawRoute(routeData.geoJsonData, tomMap);
+              // });
           })
         };
       };
     };
 
+  const findAndDrawRoute = (poiName, tomMap, origin, dest) => {
+    console.log('Drawing route...')
+    console.log(origin);
+    console.log(dest);
+    axios
+    .get('api/find_route', {params : {origin:origin, dest:dest,  travelMode:travelMode}})
+    .then((response)=>{
+      return response.data;
+    })
+    .then(function(routeData) {
+        console.log(routeData);
+        setupTargetCard({name:poiName, bestRouteSummary:routeData.routes[0].summary});
+        drawRoute(routeData.geoJsonData, tomMap);
+    });
+    console.log('Done drawing')
+  }
+
     //Function to get and plot nearby points
   async function getNearbyPoints(){
     console.log('Fetching data')
-    const res = await axios.get('api/nearby_points', {params:{lat:currpos.latitude, lon:currpos.longitude}});
+    const res = await axios.get('api/nearby_points', {params:{lat:currpos.lat, lon:currpos.lon}});
     console.log(res.data);
     return res.data;
   }
@@ -200,7 +224,7 @@ const Map = () => {
     if (category !== '') {
       console.log(`*** CATEGORY *** ${category}`)
       const res = await axios.get('api/nearby_points_by_cat',
-      {params:{lat:currpos.latitude,lon:currpos.longitude, categ:category}});
+      {params:{lat:currpos.lat,lon:currpos.lon, categ:category}});
       console.log(res.data);
       setCurrentPois(res.data);
       // return res.data;
@@ -229,6 +253,16 @@ const Map = () => {
 
       // searchDestination(); // DON'T DO THIS!
       addMulMarkers(currentPois, tomMap); //Add all markers to map
+      // console.log('```````````````````')
+      // console.log(currpos);
+      // console.log(activeDestination);
+      // console.log('```````````````````')
+      if ((currpos !== undefined) && (activeDestination !== undefined)) {
+        // console.log('DRAWING ROUTE IN USEEFFECT');
+        await findAndDrawRoute(activeDestinationName, tomMap, currpos, activeDestination);
+        // console.log('DONE DRAWING ROUTE IN USEEFFECT');
+      }
+
       return () => tomMap.remove();
     }, [currpos, currentPois, travelMode]);
   
@@ -236,9 +270,9 @@ const Map = () => {
       return (
         <div>
           <TravelModeChips modeSetter={setTravelMode}></TravelModeChips>
-          <SearchBoxWrapper searchType={'Destination'} setter={setDestination} actionFunction={searchDestination}/>
+          {/* <SearchBoxWrapper searchType={'Destination'} setter={setDestination} actionFunction={searchDestination}/> */}
           <SearchBoxWrapper searchType={'Category'} setter={setCategory} actionFunction={getNearbyPointsByCat}/>
-          <LocationCard location={currentTarget}></LocationCard>
+          <LocationCard location={currentTarget} travelMode={travelMode}></LocationCard>
           <div ref={mapElement} className='tomMap'> </div>
         </div>  
       );
