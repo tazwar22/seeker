@@ -35,6 +35,8 @@ const Map = () => {
     const [travelMode, setTravelMode] = useState('car');
     const [activeDestination, setActiveDestination] = useState();
     const [activeDestinationName, setActiveDestinationName] = useState('');
+
+    const [avoidRegion, setAvoidRegion] = useState([]);
   
     // Source - https://github.com/kubowania/distance-matrix-routing-with-tom-tom-api/blob/main/src/App.js
     const drawRoute = (geoJson, map) => {
@@ -68,16 +70,19 @@ const Map = () => {
         stylesVisibility: {poi:false}, //Remove POI markers,
       });
 
+      // Add a vertex
       tomMap.on('click', function (event) {
         const position = event.lngLat;
-        console.log(position);
-        // tt.services.reverseGeocode({
-        //     key: apiKey,
-        //     position: position
-        // })
-        //     .then(function (results) {
-        //         drawPassengerMarkerOnMap(results);
-        //     });
+        // console.log(position);
+        console.log('Adding vertex');
+        //If we already have 3 elements, reset it
+        if (avoidRegion.length < 4){
+          setAvoidRegion([...avoidRegion, [position.lng, position.lat]]);
+          // console.log(avoidRegion);
+        } else {
+          setAvoidRegion([]);
+          console.log(`#corners: ${avoidRegion.length}`);
+        }
       });
       
       return tomMap;
@@ -231,6 +236,29 @@ const Map = () => {
     }
   }
 
+  const drawPolygon = (map) => {
+        map.addLayer({
+          'id': 'overlay',
+          'type': 'fill',
+          'source': {
+              'type': 'geojson',
+              'data': {
+                  'type': 'Feature',
+                  'geometry': {
+                      'type': 'Polygon',
+                      'coordinates': [avoidRegion]
+                  }
+              }
+          },
+          'layout': {},
+          'paint': {
+              'fill-color': '#db356c',
+              'fill-opacity': 0.5,
+              'fill-outline-color': 'black'
+              }
+      });
+  };
+
   /*
   This function performs a fuzzy search for all types of entities (POIs, Addresses)
   */
@@ -263,8 +291,13 @@ const Map = () => {
         // console.log('DONE DRAWING ROUTE IN USEEFFECT');
       }
 
+      if (avoidRegion.length == 4) {
+        console.log('DRAWING POLYGON');
+        tomMap.on('load',  ()=>{drawPolygon(tomMap)});
+      }
+
       return () => tomMap.remove();
-    }, [currpos, currentPois, travelMode]);
+    }, [currpos, currentPois, travelMode, avoidRegion]);
   
     if (mapOb){
       return (
