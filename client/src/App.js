@@ -10,7 +10,7 @@ axios.defaults.baseURL = backendUrl;
 function App() {
 
   return (
-    <div>
+    <div  className="App">
       <Typography variant='h2'>Seeker</Typography>
       <Map />
     </div>

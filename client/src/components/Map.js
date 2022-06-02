@@ -12,6 +12,7 @@ import { faHome, faCoffee, faLocationDot} from "@fortawesome/free-solid-svg-icon
 import { library, icon } from '@fortawesome/fontawesome-svg-core';
 import SearchBoxWrapper from './SearchBoxWrapper';
 import { Typography } from '@mui/material';
+import LocationCard from './LocationCard';
 
 library.add(faHome);
 library.add(faCoffee);
@@ -28,6 +29,8 @@ const Map = () => {
     const [category, setCategory] = useState('');
     const [destination, setDestination] = useState('');
     const [currentPois, setCurrentPois] = useState([]);
+
+    const [currentTarget, setCurrentTarget] = useState();
   
     // Function to parse given location
     const parseLatLong = (latLongStr) => {
@@ -68,6 +71,22 @@ const Map = () => {
         stylesVisibility: {poi:false} //Remove POI markers
       });
       return tomMap;
+    };
+
+    const formatName = (point) => {
+      switch (point.type){
+        case 'POI':
+          return point.poi.name;
+        case 'Address Range':
+          return point.address.freeformAddress;
+        default:
+          return point.address.freeformAddress;
+      }
+    };
+
+    const setupTargetCard = (targetObject) => {
+      // console.log(targetObject);
+      setCurrentTarget(targetObject);
     };
 
     /*
@@ -113,10 +132,11 @@ const Map = () => {
         for (let pid in nearbyPois.results){
           // console.log(nearbyPois.results[pid]);
           const point = nearbyPois.results[pid];
+          // console.log(point);
           //Unpack the point object to access the location
           let poiLoc, poiName;
           poiLoc = point.position
-          poiName = point.poi.name
+          poiName = formatName(point);
 
           // Popup
           const popupOffset = {bottom : [0, -30]};
@@ -124,10 +144,6 @@ const Map = () => {
           const markerElement = document.createElement('span', {className:''});
           markerElement.innerHTML = icon({ prefix: 'fa', iconName: 'location-dot'}).html;
           markerElement.className = 'marker-poi';
-          // markerElement.addEventListener('click', ()=>{
-          //     console.log("Position...")
-          //     console.log([poiLoc.lng, poiLoc.lat]);
-          // })
           
           const marker = new tt.Marker({
               element:markerElement,
@@ -141,21 +157,24 @@ const Map = () => {
           marker.addTo(tomMap);
 
           marker._element.addEventListener('click', ()=>{
+              console.log(point)
               // console.log("Position...")
               // console.log([poiLoc.lng, poiLoc.lat]);
               // console.log(`${currpos.longitude},${currpos.latitude}:${poiLoc.lng},${poiLoc.lat}`)
               const origin = {lat:currpos.latitude, lon:currpos.longitude};
               const dest = {lat:poiLoc.lat, lon:poiLoc.lng};
               axios
-                .get('api/find_route', {params : {origin:origin, dest:dest, travelMode:'car'}})
+                .get('api/find_route', {params : {origin:origin, dest:dest, travelMode:'pedestrian'}})
                 .then((response)=>{
                   return response.data;
                 })
                 .then(function(routeData) {
-                    console.log(routeData)
+                    console.log(routeData);
+
                     // const SECONDS = routeData.routes[0].summary.travelTimeInSeconds;
                     // const travelTime = new Date(SECONDS * 1000).toISOString().substr(11, 8);
                     // console.log("Travel time to " + poiName + ":" + travelTime);
+                    setupTargetCard({name:poiName, bestRouteSummary:routeData.routes[0].summary});
                     drawRoute(routeData.geoJsonData, tomMap);
               });
           })
@@ -212,9 +231,10 @@ const Map = () => {
   
     if (mapOb){
       return (
-        <div className="App">
+        <div>
           <SearchBoxWrapper searchType={'Destination'} setter={setDestination} actionFunction={searchDestination}/>
           <SearchBoxWrapper searchType={'Category'} setter={setCategory} actionFunction={getNearbyPointsByCat}/>
+          <LocationCard location={currentTarget}></LocationCard>
           <div ref={mapElement} className='tomMap'> </div>
         </div>  
       );

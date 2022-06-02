@@ -64,7 +64,7 @@ Given an origin and a destination; calculates the route(s) using TomTom API
 */
 app.get('/api/find_route', (req, res)=>{
     console.log('Calculating route to destination... \n');
-    console.log(req.query)
+    // console.log(req.query)
     const origin = JSON.parse(req.query.origin);
     const dest = JSON.parse(req.query.dest);
     const travelMode = req.query.travelMode;
