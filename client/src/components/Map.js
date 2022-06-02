@@ -11,8 +11,9 @@ import { faHome, faCoffee, faLocationDot} from "@fortawesome/free-solid-svg-icon
 // import 'font-awesome/css/font-awesome.min.css';
 import { library, icon } from '@fortawesome/fontawesome-svg-core';
 import SearchBoxWrapper from './SearchBoxWrapper';
-import { Typography } from '@mui/material';
+// import { Typography } from '@mui/material';
 import LocationCard from './LocationCard';
+import TravelModeChips from './TravelModeChips';
 
 library.add(faHome);
 library.add(faCoffee);
@@ -31,6 +32,7 @@ const Map = () => {
     const [currentPois, setCurrentPois] = useState([]);
 
     const [currentTarget, setCurrentTarget] = useState();
+    const [travelMode, setTravelMode] = useState('car');
   
     // Function to parse given location
     const parseLatLong = (latLongStr) => {
@@ -163,8 +165,9 @@ const Map = () => {
               // console.log(`${currpos.longitude},${currpos.latitude}:${poiLoc.lng},${poiLoc.lat}`)
               const origin = {lat:currpos.latitude, lon:currpos.longitude};
               const dest = {lat:poiLoc.lat, lon:poiLoc.lng};
+              console.log(`Current travel mode: ${travelMode}`)
               axios
-                .get('api/find_route', {params : {origin:origin, dest:dest, travelMode:'pedestrian'}})
+                .get('api/find_route', {params : {origin:origin, dest:dest, travelMode:travelMode}})
                 .then((response)=>{
                   return response.data;
                 })
@@ -227,11 +230,12 @@ const Map = () => {
       // searchDestination(); // DON'T DO THIS!
       addMulMarkers(currentPois, tomMap); //Add all markers to map
       return () => tomMap.remove();
-    }, [currpos, currentPois]);
+    }, [currpos, currentPois, travelMode]);
   
     if (mapOb){
       return (
         <div>
+          <TravelModeChips modeSetter={setTravelMode}></TravelModeChips>
           <SearchBoxWrapper searchType={'Destination'} setter={setDestination} actionFunction={searchDestination}/>
           <SearchBoxWrapper searchType={'Category'} setter={setCategory} actionFunction={getNearbyPointsByCat}/>
           <LocationCard location={currentTarget}></LocationCard>
