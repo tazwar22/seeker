@@ -1,4 +1,5 @@
 import React from 'react';
+import { Typography, TextField, Button } from '@mui/material';
 
 const SearchBoxWrapper = ({searchType, setter, actionFunction}) => {
 
@@ -11,9 +12,9 @@ const SearchBoxWrapper = ({searchType, setter, actionFunction}) => {
 
   return (
     <div>
-      <h4>{searchType}</h4>
-      <input placeholder={placeholderText} onChange={(e)=>{setter(e.target.value)}}></input>
-      <button onClick={()=>{handleClick()}}>Search</button>
+      <Typography variant='h5'>{searchType}</Typography>
+      <TextField label={placeholderText} variant="outlined" onChange={(e)=>{setter(e.target.value)}} />
+      <Button variant="contained" onClick={()=>{handleClick()}}>Search</Button>
     </div>
   )
 }

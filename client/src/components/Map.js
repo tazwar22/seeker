@@ -3,14 +3,15 @@ import axios from 'axios';
 import {useState, useEffect, useRef} from 'react'
 import '@tomtom-international/web-sdk-maps/dist/maps.css'
 import * as tt from '@tomtom-international/web-sdk-maps' //Get everything
-import { services } from '@tomtom-international/web-sdk-services';
-import SearchBox from '@tomtom-international/web-sdk-plugin-searchbox';
+// import { services } from '@tomtom-international/web-sdk-services';
+// import SearchBox from '@tomtom-international/web-sdk-plugin-searchbox';
 // import * as api from '@tomtom-international/web-sdk-services'
 import { faHome, faCoffee, faLocationDot} from "@fortawesome/free-solid-svg-icons";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 // import 'font-awesome/css/font-awesome.min.css';
 import { library, icon } from '@fortawesome/fontawesome-svg-core';
 import SearchBoxWrapper from './SearchBoxWrapper';
+import { Typography } from '@mui/material';
 
 library.add(faHome);
 library.add(faCoffee);
