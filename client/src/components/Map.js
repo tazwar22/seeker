@@ -14,6 +14,8 @@ import SearchBoxWrapper from './SearchBoxWrapper';
 // import { Typography } from '@mui/material';
 import LocationCard from './LocationCard';
 import TravelModeChips from './TravelModeChips';
+// import {bbox, point, lineString, bboxPolygon, featureCollection} from '@turf/turf';
+import {circle} from '@turf/turf';
 
 library.add(faHome);
 library.add(faCoffee);
@@ -70,6 +72,14 @@ const Map = () => {
         stylesVisibility: {poi:false}, //Remove POI markers,
       });
 
+      //Add a circle
+      var center = [currpos.lon, currpos.lat];
+      var radius = 2;
+      var options = {steps: 20, units: 'kilometers', properties: {foo: 'bar'}};
+      var circ = circle(center, radius, options);
+      console.log(circ.geometry.coordinates);
+      tomMap.on('load',  ()=>{drawRadius(tomMap, circ.geometry.coordinates[0])});
+
       // Add a vertex
       tomMap.on('click', function (event) {
         const position = event.lngLat;
@@ -77,10 +87,12 @@ const Map = () => {
         console.log('Adding vertex');
         //If we already have 3 elements, reset it
         if (avoidRegion.length < 4){
+          //Update region
           setAvoidRegion([...avoidRegion, [position.lng, position.lat]]);
           // console.log(avoidRegion);
         } else {
           setAvoidRegion([]);
+          // setAvoidRegion([...avoidRegion, [position.lng, position.lat]]);
           console.log(`#corners: ${avoidRegion.length}`);
         }
       });
@@ -236,6 +248,29 @@ const Map = () => {
     }
   }
 
+  const drawRadius = (map, circlePath) => {
+    map.addLayer({
+      'id': 'radius',
+      'type': 'fill',
+      'source': {
+          'type': 'geojson',
+          'data': {
+              'type': 'Feature',
+              'geometry': {
+                  'type': 'Polygon',
+                  'coordinates': [circlePath]
+              }
+          }
+      },
+      'layout': {},
+      'paint': {
+          'fill-color': '#db356c',
+          'fill-opacity': 0.1,
+          'fill-outline-color': 'black'
+          }
+  });
+  }
+
   const drawPolygon = (map) => {
         map.addLayer({
           'id': 'overlay',
@@ -276,6 +311,7 @@ const Map = () => {
     useEffect(async ()=>{
       //Construct a map
       const tomMap = createMap();
+
       setMap(tomMap);
       addMarker(tomMap); //user
 
