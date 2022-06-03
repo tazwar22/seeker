@@ -1,14 +1,20 @@
 import './App.css';
 import Map from './components/Map';
 import axios from 'axios';
+import { Typography } from '@mui/material';
 
 const backendPort = 5001;
 const backendUrl = `http://localhost:${backendPort}`;
-console.log(backendUrl);
 axios.defaults.baseURL = backendUrl;
 
 function App() {
-  return <Map></Map>
+
+  return (
+    <div  className="App">
+      <Typography variant='h2'>Seeker</Typography>
+      <Map />
+    </div>
+    )
 }
 
 export default App;
