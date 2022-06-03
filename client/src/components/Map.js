@@ -9,9 +9,8 @@ import SearchBoxWrapper from './SearchBoxWrapper';
 // import { Typography } from '@mui/material';
 import LocationCard from './LocationCard';
 import TravelModeChips from './TravelModeChips';
-// import {bbox, point, lineString, bboxPolygon, featureCollection} from '@turf/turf';
-import {circle} from '@turf/turf';
 import * as turf from '@turf/turf';
+import AvoidRegionControl from './AvoidRegionControl';
 
 library.add(faHome);
 library.add(faCoffee);
@@ -36,6 +35,9 @@ const Map = () => {
 
     const [avoidRegion, setAvoidRegion] = useState([]);
     const [corners, setCorners] = useState(); //SW and NE corners of avoid region
+
+    const [canAddRegion, setCanAddRegion] = useState(false);
+
   
     // Source - https://github.com/kubowania/distance-matrix-routing-with-tom-tom-api/blob/main/src/App.js
     const drawRoute = (geoJson, map) => {
@@ -73,7 +75,7 @@ const Map = () => {
       var center = [currpos.lon, currpos.lat];
       var radius = 0.5;
       var options = {steps: 20, units: 'kilometers', properties: {foo: 'bar'}};
-      var circ = circle(center, radius, options);
+      var circ = turf.circle(center, radius, options);
       // console.log(circ.geometry.coordinates);
       tomMap.on('load',  ()=>{drawRadius(tomMap, circ.geometry.coordinates[0])});
 
@@ -91,7 +93,7 @@ const Map = () => {
     const handleMapClick = (event, map) => {
       const position = event.lngLat;
       console.log(position);
-      if (avoidRegion.length < 1){
+      if (canAddRegion &&  avoidRegion.length < 1){
         const p1 = turf.point([position.lng, position.lat]);
         var offsetX =  0.9/2; // User input for rectangle width
         var offsetY =  0.4/2; // User input for rectable height
@@ -130,17 +132,11 @@ const Map = () => {
 
         // Add markers
         const corners = mouseShape.geometry.coordinates[0];
-        setAvoidRegion(corners);
-
         const limits = {SW:corners[4], NE:corners[2]}
+
+        setAvoidRegion(corners);
         setCorners(limits);
-        console.log(limits);
-        // const 
-      } else {
-        // console.log('*** RESETTING AVOID REGION ***')
-        // setAvoidRegion([]);
-        console.log('Avoid region is full');
-        console.log(avoidRegion.length);
+        setCanAddRegion(false);
       }
     };
 
@@ -268,6 +264,15 @@ const Map = () => {
       };
     };
 
+  const activateSelectionMode = () => {
+    setCanAddRegion(true);
+  }
+
+  const resetAvoidRegion = () => {
+    setAvoidRegion([]);
+    setCorners();
+  }
+
   const findAndDrawRoute = (poiName, tomMap, origin, dest) => {
     console.log('Drawing route...')
     console.log(origin);
@@ -337,7 +342,7 @@ const Map = () => {
       },
       'layout': {},
       'paint': {
-          'fill-color': '#db356c',
+          'fill-color': 'green',
           'fill-opacity': 0.1,
           'fill-outline-color': 'black'
           }
@@ -409,12 +414,13 @@ const Map = () => {
       }
       // console.log(tomMap)
       return () => tomMap.remove();
-    }, [currpos, currentPois, travelMode, avoidRegion]);
+    }, [currpos, currentPois, travelMode, avoidRegion, canAddRegion]);
   
     if (mapOb){
       return (
         <div>
           <TravelModeChips modeSetter={setTravelMode}></TravelModeChips>
+          <AvoidRegionControl canAdd={avoidRegion.length == 0} activateSelectionMode={activateSelectionMode} resetter={resetAvoidRegion}></AvoidRegionControl>
           {/* <SearchBoxWrapper searchType={'Destination'} setter={setDestination} actionFunction={searchDestination}/> */}
           <SearchBoxWrapper searchType={'Category'} setter={setCategory} actionFunction={getNearbyPointsByCat}/>
           <LocationCard location={currentTarget} travelMode={travelMode}></LocationCard>
