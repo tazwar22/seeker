@@ -30,8 +30,7 @@ const LocationCard = ({location, travelMode}) => {
   
   if(location){
     return (
-        <div style={{margin:20, padding:20, border:'1px solid black'}}>
-
+        <div style={{margin:20, padding:20, border:''}}>
             <Typography variant='h5'>Destination: {location.name} ({parseDistance(location.bestRouteSummary.lengthInMeters)} km away)</Typography>
             <Typography variant='h5'>Travelling by: {travelMode}</Typography>
             <Typography variant='h5'>Travel Time (minutes): {parseTravelTime(location.bestRouteSummary.travelTimeInSeconds)}</Typography>

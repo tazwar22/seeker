@@ -5,16 +5,16 @@ const AvoidRegionControl = ({activateSelectionMode, canAdd, resetter}) => {
 
   if (canAdd){
     return (
-        <div>
-            <Typography variant='h4'>Avoid Region Control</Typography>
-            <Button variant="contained" onClick={()=>{activateSelectionMode()}} >Add Region</Button>
+        <div style={{backgroundColor:'', marginTop:2, marginBottom:2, padding:20}}>
+            <Typography variant='h5'>Avoid Region Control</Typography>
+            <Button variant="contained" color='success' onClick={()=>{activateSelectionMode()}} >Add Region</Button>
         </div>
       )
   }else{
     return (
-        <div>
-            <Typography variant='h4'>Avoid Region Control</Typography>
-            <Button variant="contained" onClick={()=>{resetter()}} >Reset Region</Button>
+        <div style={{backgroundColor:'', marginTop:2, marginBottom:2, padding:20}}>
+            <Typography variant='h5'>Avoid Region Control</Typography>
+            <Button variant="contained" color='error' onClick={()=>{resetter()}} >Reset Region</Button>
         </div>
       )
     }

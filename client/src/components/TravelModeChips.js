@@ -10,9 +10,9 @@ const TravelModeChips = ({modeSetter}) => {
   };
 
   return (
-    <div>
-        <Typography variant='h5'>Select Travel Mode: </Typography>
-        <Stack direction="row" spacing={2}>
+    <div style= {{backgroundColor:''}}>
+        <Typography  variant='h5'>Select Travel Mode: </Typography>
+        <Stack sx={{marginLeft:'40%', padding:1}} direction="row" spacing={2}>
             <Chip color='primary' label="Car" onClick={()=>{handleClick('Car')}}/>
             <Chip color='primary' label="Bus" onClick={()=>{handleClick('Bus')}}/>
             <Chip color='primary' label="Walking" onClick={()=>{handleClick('Pedestrian')}}/>
