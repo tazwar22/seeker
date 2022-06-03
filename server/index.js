@@ -68,12 +68,21 @@ app.get('/api/find_route', (req, res)=>{
     const origin = JSON.parse(req.query.origin);
     const dest = JSON.parse(req.query.dest);
     const travelMode = req.query.travelMode.toLowerCase();
-    tt.services
-    .calculateRoute({
+
+    const options = {
         key: process.env.TT_API_KEY,
         locations: `${origin.lon},${origin.lat}:${dest.lon},${dest.lat}`,
         travelMode: travelMode
-    }).then((routeData)=>{
+    };
+
+    if (req.query.avoidAreas !== undefined){
+        const avoidAreas = [JSON.parse(req.query.avoidAreas)];
+        options.avoidAreas = avoidAreas
+    }
+
+    tt.services
+    .calculateRoute(options)
+    .then((routeData)=>{
         console.log(routeData);
         console.log(routeData.toGeoJson());
         const processedRoute = {

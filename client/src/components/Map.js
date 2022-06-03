@@ -23,7 +23,7 @@ const Map = () => {
     const KEY = process.env.REACT_APP_TT_API_KEY;
     const mapElement = useRef();
     const [mapOb, setMap] = useState({});
-    const [zoomLevel, setZoomLevel] = useState(10)
+    const [zoomLevel, setZoomLevel] = useState(14)
     const [currpos, setCurrpos] = useState({lat:49.276065091660456, lon:-123.1285285423275});
     const [category, setCategory] = useState('');
     const [destination, setDestination] = useState('');
@@ -35,6 +35,7 @@ const Map = () => {
     const [activeDestinationName, setActiveDestinationName] = useState('');
 
     const [avoidRegion, setAvoidRegion] = useState([]);
+    const [corners, setCorners] = useState(); //SW and NE corners of avoid region
   
     // Source - https://github.com/kubowania/distance-matrix-routing-with-tom-tom-api/blob/main/src/App.js
     const drawRoute = (geoJson, map) => {
@@ -130,34 +131,42 @@ const Map = () => {
         // Add markers
         const corners = mouseShape.geometry.coordinates[0];
         setAvoidRegion(corners);
-        addAvoidRegionCornerMarkers(map);
+
+        const limits = {SW:corners[4], NE:corners[2]}
+        setCorners(limits);
+        console.log(limits);
+        // const 
       } else {
         console.log('*** RESETTING AVOID REGION ***')
-        setAvoidRegion([]);
+        // setAvoidRegion([]);
       }
     };
 
-    const addAvoidRegionCornerMarkers = (map)=>{
-      avoidRegion.forEach((ele, idx) => {
-        const cornerName = `C-${idx}`
-        const popupOffset = {bottom : [0, -30]};
-        const popup = new tt.Popup({offset : popupOffset}).setHTML(cornerName);
-        const markerElement = document.createElement('span', {className:''});
-        markerElement.innerHTML = icon({ prefix: 'fa', iconName: 'location-dot'}).html;
-        markerElement.className = 'marker-poi';
-        
-        const marker = new tt.Marker({
-            element:markerElement,
-            draggable:false
-        });
-
-        //Specify initial position
-        marker.setLngLat(ele);
-        // console.log(marker)
-        marker.setPopup(popup);
-        marker.addTo(map);
-      });
-    }
+    // const addAvoidRegionCornerMarkers = (map)=>{
+    //   avoidRegion.forEach((ele, idx) => {
+    //     //Hacky solution - only add SW and NW corners
+    //     if (idx % 2 == 0 ){
+    //       const cornerName = `C-${idx}`
+    //       const popupOffset = {bottom : [0, -30]};
+    //       const popup = new tt.Popup({offset : popupOffset}).setHTML(cornerName);
+    //       const markerElement = document.createElement('span', {className:''});
+    //       markerElement.innerHTML = icon({ prefix: 'fa', iconName: 'location-dot'}).html;
+    //       markerElement.className = 'marker-poi';
+          
+    //       const marker = new tt.Marker({
+    //           element:markerElement,
+    //           draggable:false
+    //       });
+  
+    //       //Specify initial position
+    //       marker.setLngLat(ele);
+    //       // console.log(marker)
+    //       marker.setPopup(popup);
+    //       marker.addTo(map);
+    //       }
+    //     }
+    //    );
+    // };
 
 
 
@@ -261,8 +270,22 @@ const Map = () => {
     console.log('Drawing route...')
     console.log(origin);
     console.log(dest);
+    const queryParams = {origin:origin, dest:dest,  travelMode:travelMode};
+    console.log('CORNERS')
+    console.log(corners);
+    if (corners) {
+      console.log('Avoiding area...');
+      //Avoid this rectangle
+      queryParams.avoidAreas = [{
+        southWestCorner : {latitude: corners.SW[1], longitude:corners.SW[0]},
+        northEastCorner : {latitude: corners.NE[1], longitude:corners.NE[0]}
+      }];
+      console.log(queryParams);
+    }else {
+      queryParams.avoidAreas = undefined;
+    }
     axios
-    .get('api/find_route', {params : {origin:origin, dest:dest,  travelMode:travelMode}})
+    .get('api/find_route', {params : queryParams})
     .then((response)=>{
       return response.data;
     })
@@ -380,7 +403,7 @@ const Map = () => {
         console.log('DRAWING POLYGON');
         console.log(avoidRegion);
         tomMap.on('load',  ()=>{drawPolygon(tomMap)});
-        addAvoidRegionCornerMarkers(tomMap);
+        // addAvoidRegionCornerMarkers(tomMap);
       }
 
       return () => tomMap.remove();
