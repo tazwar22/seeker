@@ -137,8 +137,10 @@ const Map = () => {
         console.log(limits);
         // const 
       } else {
-        console.log('*** RESETTING AVOID REGION ***')
+        // console.log('*** RESETTING AVOID REGION ***')
         // setAvoidRegion([]);
+        console.log('Avoid region is full');
+        console.log(avoidRegion.length);
       }
     };
 
@@ -400,12 +402,12 @@ const Map = () => {
       }
 
       if (avoidRegion.length > 0) {
-        console.log('DRAWING POLYGON');
-        console.log(avoidRegion);
+        // console.log('DRAWING POLYGON');
+        // console.log(avoidRegion);
         tomMap.on('load',  ()=>{drawPolygon(tomMap)});
         // addAvoidRegionCornerMarkers(tomMap);
       }
-
+      // console.log(tomMap)
       return () => tomMap.remove();
     }, [currpos, currentPois, travelMode, avoidRegion]);
   
