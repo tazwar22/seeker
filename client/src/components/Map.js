@@ -74,7 +74,7 @@ const Map = () => {
 
       //Add a circle
       var center = [currpos.lon, currpos.lat];
-      var radius = 2;
+      var radius = 0.5;
       var options = {steps: 20, units: 'kilometers', properties: {foo: 'bar'}};
       var circ = circle(center, radius, options);
       console.log(circ.geometry.coordinates);
