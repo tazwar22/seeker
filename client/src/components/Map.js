@@ -3,19 +3,14 @@ import axios from 'axios';
 import {useState, useEffect, useRef} from 'react'
 import '@tomtom-international/web-sdk-maps/dist/maps.css'
 import * as tt from '@tomtom-international/web-sdk-maps' //Get everything
-// import { services } from '@tomtom-international/web-sdk-services';
-// import SearchBox from '@tomtom-international/web-sdk-plugin-searchbox';
-// import * as api from '@tomtom-international/web-sdk-services'
 import { faHome, faCoffee, faLocationDot} from "@fortawesome/free-solid-svg-icons";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// import 'font-awesome/css/font-awesome.min.css';
 import { library, icon } from '@fortawesome/fontawesome-svg-core';
 import SearchBoxWrapper from './SearchBoxWrapper';
 // import { Typography } from '@mui/material';
 import LocationCard from './LocationCard';
 import TravelModeChips from './TravelModeChips';
-// import {bbox, point, lineString, bboxPolygon, featureCollection} from '@turf/turf';
-import {circle} from '@turf/turf';
+import * as turf from '@turf/turf';
+import AvoidRegionControl from './AvoidRegionControl';
 
 library.add(faHome);
 library.add(faCoffee);
@@ -39,6 +34,10 @@ const Map = () => {
     const [activeDestinationName, setActiveDestinationName] = useState('');
 
     const [avoidRegion, setAvoidRegion] = useState([]);
+    const [corners, setCorners] = useState(); //SW and NE corners of avoid region
+
+    const [canAddRegion, setCanAddRegion] = useState(false);
+
   
     // Source - https://github.com/kubowania/distance-matrix-routing-with-tom-tom-api/blob/main/src/App.js
     const drawRoute = (geoJson, map) => {
@@ -76,29 +75,98 @@ const Map = () => {
       var center = [currpos.lon, currpos.lat];
       var radius = 0.5;
       var options = {steps: 20, units: 'kilometers', properties: {foo: 'bar'}};
-      var circ = circle(center, radius, options);
-      console.log(circ.geometry.coordinates);
+      var circ = turf.circle(center, radius, options);
+      // console.log(circ.geometry.coordinates);
       tomMap.on('load',  ()=>{drawRadius(tomMap, circ.geometry.coordinates[0])});
 
       // Add a vertex
       tomMap.on('click', function (event) {
-        const position = event.lngLat;
-        // console.log(position);
-        console.log('Adding vertex');
-        //If we already have 3 elements, reset it
-        if (avoidRegion.length < 4){
-          //Update region
-          setAvoidRegion([...avoidRegion, [position.lng, position.lat]]);
-          // console.log(avoidRegion);
-        } else {
-          setAvoidRegion([]);
-          // setAvoidRegion([...avoidRegion, [position.lng, position.lat]]);
-          console.log(`#corners: ${avoidRegion.length}`);
-        }
+        handleMapClick(event, tomMap);
       });
-      
       return tomMap;
     };
+
+    /*
+    Adds a vertex as long as avoid region isn't already full
+    REFERENCE - https://gis.stackexchange.com/questions/312548/creating-a-rectangle-using-leaflet-turf-js
+    */
+    const handleMapClick = (event, map) => {
+      const position = event.lngLat;
+      console.log(position);
+      if (canAddRegion &&  avoidRegion.length < 1){
+        const p1 = turf.point([position.lng, position.lat]);
+        var offsetX =  0.9/2; // User input for rectangle width
+        var offsetY =  0.4/2; // User input for rectable height
+
+        var topLimit = turf.destination(
+            p1, // Mouse cursor location (in latlng),
+            offsetY,
+            0,
+            {"units": "kilometers"});
+
+        var rightLimit = turf.destination(
+            p1, // Mouse cursor location (in latlng),
+            offsetX,
+            90,
+            {"units": "kilometers"});
+
+        var bottomLimit = turf.destination(
+            p1, // Mouse cursor location (in latlng),
+            offsetY,
+            180,
+            {"units": "kilometers"});
+
+        var leftLimit = turf.destination(
+            p1, // Mouse cursor location (in latlng),
+            offsetX,
+            -90,
+            {"units": "kilometers"});
+        
+        const mouseShape = turf.envelope(turf.featureCollection([ // Resultant rectangle
+            topLimit,
+            rightLimit,
+            bottomLimit,
+            leftLimit
+        ]));
+        // console.log(mouseShape.geometry.coordinates[0]);
+
+        // Add markers
+        const corners = mouseShape.geometry.coordinates[0];
+        const limits = {SW:corners[4], NE:corners[2]}
+
+        setAvoidRegion(corners);
+        setCorners(limits);
+        setCanAddRegion(false);
+      }
+    };
+
+    // const addAvoidRegionCornerMarkers = (map)=>{
+    //   avoidRegion.forEach((ele, idx) => {
+    //     //Hacky solution - only add SW and NW corners
+    //     if (idx % 2 == 0 ){
+    //       const cornerName = `C-${idx}`
+    //       const popupOffset = {bottom : [0, -30]};
+    //       const popup = new tt.Popup({offset : popupOffset}).setHTML(cornerName);
+    //       const markerElement = document.createElement('span', {className:''});
+    //       markerElement.innerHTML = icon({ prefix: 'fa', iconName: 'location-dot'}).html;
+    //       markerElement.className = 'marker-poi';
+          
+    //       const marker = new tt.Marker({
+    //           element:markerElement,
+    //           draggable:false
+    //       });
+  
+    //       //Specify initial position
+    //       marker.setLngLat(ele);
+    //       // console.log(marker)
+    //       marker.setPopup(popup);
+    //       marker.addTo(map);
+    //       }
+    //     }
+    //    );
+    // };
+
+
 
     const formatName = (point) => {
       switch (point.type){
@@ -185,36 +253,46 @@ const Map = () => {
 
           marker._element.addEventListener('click', async ()=>{
               console.log(point);
-              // console.log("Position...")
-              // console.log([poiLoc.lng, poiLoc.lat]);
-              // console.log(`${currpos.longitude},${currpos.latitude}:${poiLoc.lng},${poiLoc.lat}`)
               const origin = {lat:currpos.lat, lon:currpos.lon};
               const dest = {lat:poiLoc.lat, lon:poiLoc.lng};
               setActiveDestination(dest);
               setActiveDestinationName(poiName);
               console.log(`Current travel mode: ${travelMode}`);
               await findAndDrawRoute(poiName, tomMap, origin, dest);
-              // axios
-              //   .get('api/find_route', {params : {origin:origin, dest:dest, travelMode:travelMode}})
-              //   .then((response)=>{
-              //     return response.data;
-              //   })
-              //   .then(function(routeData) {
-              //       console.log(routeData);
-              //       setupTargetCard({name:poiName, bestRouteSummary:routeData.routes[0].summary});
-              //       drawRoute(routeData.geoJsonData, tomMap);
-              // });
           })
         };
       };
     };
 
+  const activateSelectionMode = () => {
+    setCanAddRegion(true);
+  }
+
+  const resetAvoidRegion = () => {
+    setAvoidRegion([]);
+    setCorners();
+  }
+
   const findAndDrawRoute = (poiName, tomMap, origin, dest) => {
     console.log('Drawing route...')
     console.log(origin);
     console.log(dest);
+    const queryParams = {origin:origin, dest:dest,  travelMode:travelMode};
+    console.log('CORNERS')
+    console.log(corners);
+    if (corners) {
+      console.log('Avoiding area...');
+      //Avoid this rectangle
+      queryParams.avoidAreas = [{
+        southWestCorner : {latitude: corners.SW[1], longitude:corners.SW[0]},
+        northEastCorner : {latitude: corners.NE[1], longitude:corners.NE[0]}
+      }];
+      console.log(queryParams);
+    }else {
+      queryParams.avoidAreas = undefined;
+    }
     axios
-    .get('api/find_route', {params : {origin:origin, dest:dest,  travelMode:travelMode}})
+    .get('api/find_route', {params : queryParams})
     .then((response)=>{
       return response.data;
     })
@@ -264,7 +342,7 @@ const Map = () => {
       },
       'layout': {},
       'paint': {
-          'fill-color': '#db356c',
+          'fill-color': 'green',
           'fill-opacity': 0.1,
           'fill-outline-color': 'black'
           }
@@ -317,6 +395,7 @@ const Map = () => {
 
       // searchDestination(); // DON'T DO THIS!
       addMulMarkers(currentPois, tomMap); //Add all markers to map
+
       // console.log('```````````````````')
       // console.log(currpos);
       // console.log(activeDestination);
@@ -327,18 +406,21 @@ const Map = () => {
         // console.log('DONE DRAWING ROUTE IN USEEFFECT');
       }
 
-      if (avoidRegion.length == 4) {
-        console.log('DRAWING POLYGON');
+      if (avoidRegion.length > 0) {
+        // console.log('DRAWING POLYGON');
+        // console.log(avoidRegion);
         tomMap.on('load',  ()=>{drawPolygon(tomMap)});
+        // addAvoidRegionCornerMarkers(tomMap);
       }
-
+      // console.log(tomMap)
       return () => tomMap.remove();
-    }, [currpos, currentPois, travelMode, avoidRegion]);
+    }, [currpos, currentPois, travelMode, avoidRegion, canAddRegion]);
   
     if (mapOb){
       return (
         <div>
           <TravelModeChips modeSetter={setTravelMode}></TravelModeChips>
+          <AvoidRegionControl canAdd={avoidRegion.length == 0} activateSelectionMode={activateSelectionMode} resetter={resetAvoidRegion}></AvoidRegionControl>
           {/* <SearchBoxWrapper searchType={'Destination'} setter={setDestination} actionFunction={searchDestination}/> */}
           <SearchBoxWrapper searchType={'Category'} setter={setCategory} actionFunction={getNearbyPointsByCat}/>
           <LocationCard location={currentTarget} travelMode={travelMode}></LocationCard>
