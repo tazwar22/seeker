@@ -23,7 +23,7 @@ const Map = () => {
     const mapElement = useRef();
     const [mapOb, setMap] = useState({});
     const [zoomLevel, setZoomLevel] = useState(14)
-    const [currpos, setCurrpos] = useState({lat:49.276065091660456, lon:-123.1285285423275});
+    const [currpos, setCurrpos] = useState({lat:49.263074733533216, lon:-123.11331189913167});
     const [category, setCategory] = useState('');
     const [destination, setDestination] = useState('');
     const [currentPois, setCurrentPois] = useState([]);
@@ -140,34 +140,6 @@ const Map = () => {
       }
     };
 
-    // const addAvoidRegionCornerMarkers = (map)=>{
-    //   avoidRegion.forEach((ele, idx) => {
-    //     //Hacky solution - only add SW and NW corners
-    //     if (idx % 2 == 0 ){
-    //       const cornerName = `C-${idx}`
-    //       const popupOffset = {bottom : [0, -30]};
-    //       const popup = new tt.Popup({offset : popupOffset}).setHTML(cornerName);
-    //       const markerElement = document.createElement('span', {className:''});
-    //       markerElement.innerHTML = icon({ prefix: 'fa', iconName: 'location-dot'}).html;
-    //       markerElement.className = 'marker-poi';
-          
-    //       const marker = new tt.Marker({
-    //           element:markerElement,
-    //           draggable:false
-    //       });
-  
-    //       //Specify initial position
-    //       marker.setLngLat(ele);
-    //       // console.log(marker)
-    //       marker.setPopup(popup);
-    //       marker.addTo(map);
-    //       }
-    //     }
-    //    );
-    // };
-
-
-
     const formatName = (point) => {
       switch (point.type){
         case 'POI':
@@ -180,7 +152,6 @@ const Map = () => {
     };
 
     const setupTargetCard = (targetObject) => {
-      // console.log(targetObject);
       setCurrentTarget(targetObject);
     };
 
@@ -395,24 +366,13 @@ const Map = () => {
 
       // searchDestination(); // DON'T DO THIS!
       addMulMarkers(currentPois, tomMap); //Add all markers to map
-
-      // console.log('```````````````````')
-      // console.log(currpos);
-      // console.log(activeDestination);
-      // console.log('```````````````````')
       if ((currpos !== undefined) && (activeDestination !== undefined)) {
-        // console.log('DRAWING ROUTE IN USEEFFECT');
         await findAndDrawRoute(activeDestinationName, tomMap, currpos, activeDestination);
-        // console.log('DONE DRAWING ROUTE IN USEEFFECT');
       }
 
       if (avoidRegion.length > 0) {
-        // console.log('DRAWING POLYGON');
-        // console.log(avoidRegion);
         tomMap.on('load',  ()=>{drawPolygon(tomMap)});
-        // addAvoidRegionCornerMarkers(tomMap);
       }
-      // console.log(tomMap)
       return () => tomMap.remove();
     }, [currpos, currentPois, travelMode, avoidRegion, canAddRegion]);
   

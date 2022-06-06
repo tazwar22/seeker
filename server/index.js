@@ -75,7 +75,7 @@ app.get('/api/find_route', (req, res)=>{
         travelMode: travelMode
     };
 
-    if (req.query.avoidAreas !== undefined){
+    if (req.query.avoidAreas){
         const avoidAreas = [JSON.parse(req.query.avoidAreas)];
         options.avoidAreas = avoidAreas
     }
