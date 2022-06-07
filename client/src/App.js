@@ -4,7 +4,8 @@ import axios from 'axios';
 import { Typography, Divider} from '@mui/material';
 
 const backendPort = 5001;
-const backendUrl = `http://localhost:${backendPort}`;
+// const backendUrl = `http://localhost:${backendPort}`;
+const backendUrl = '';
 axios.defaults.baseURL = backendUrl;
 
 function App() {

@@ -27,3 +27,7 @@ yarn-error.log*
 seeker.code-workspace
 .vscode
 node_modules/
+
+#Deployment specs
+client/build/
+server/public/

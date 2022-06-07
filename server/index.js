@@ -2,6 +2,7 @@ const express = require('express');
 const config = require('dotenv').config();
 const cors = require('cors'); 
 const tt = require('@tomtom-international/web-sdk-services/dist/services-node.min.js');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
@@ -12,6 +13,7 @@ app.use(
     })
 );
 const PORT = process.env.PORT || 8000;
+app.use(express.static(path.join(__dirname + "/public")));
 
 app.get('/', (req, res)=>{
     res.send('*** Seeker Backend ***');
@@ -75,7 +77,7 @@ app.get('/api/find_route', (req, res)=>{
         travelMode: travelMode
     };
 
-    if (req.query.avoidAreas !== undefined){
+    if (req.query.avoidAreas){
         const avoidAreas = [JSON.parse(req.query.avoidAreas)];
         options.avoidAreas = avoidAreas
     }
