@@ -13,7 +13,7 @@ app.use(
     })
 );
 const PORT = process.env.PORT || 8000;
-app.use(express.static(path.join(__dirname+"/public")));
+app.use(express.static(path.join(__dirname + "/public")));
 
 app.get('/', (req, res)=>{
     res.send('*** Seeker Backend ***');
